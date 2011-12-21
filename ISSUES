@@ -1,0 +1,58 @@
+notmuchfs - A virtual maildir file system for notmuch queries
+=============================================================
+
+Notmuchfs is free software, released under the GNU General Public
+License version 3 (or later).
+
+Copyright © 2012 Tim Stoakes
+
+
+
+This is v0.1, so there are many unimplemented features and rough edges. Some of
+them are listed here.
+
+
+Bugs:
+-----
+
+- Sometimes see 'rename: No such file or directory (errno = 2)' from mutt. Why?
+
+- Anything that creates new messages or modifies the content of existing ones
+  will not work. This doesn't seem to break anything with mutt except
+  break-thread/join-thread (which want to mknod() new message files and write
+  altered content into them).
+
+- Sometimes see segfault in Xapian::Document::Internal::open_term_list() called
+  from notmuchfs_open() (with notmuch 0.11 at least, have not seen it since).
+  Is it gone?
+
+- Sometimes see abort in ChertTable::set_overwritten() called from
+  Xapian::Database::get_document() (with xapian 1.2.12, notmuch 0.14), only
+  seen it once.
+
+
+Mis(sing)-features:
+-------------------
+
+- Currently notmuchfs searches for individual messages, not threads. Is a
+  threads search useful? How to fit it into the 'directory name is query'
+  model?
+
+- Currently if the notmuch database contains duplicate message IDs, notmuchfs
+  only shows one message. Perhaps display them all somehow? Probably not worth
+  the effort.
+
+- The X-label header is forwarded within the mail verbatim, if MIME forwarding
+  is used. Can the MUA be changed to ignore them? It doesn't look like mutt
+  can, without a patch.
+
+- Various buffy-esque ways of checking for new mail inside a virtual maildir,
+  perhaps involving mtime of cur/ dir. Can notmuchfs change this to indicate
+  new mail in a sensible way?
+
+- Current munging of virtual maildir file names is not strictly to maildir
+  spec. Since # is allowed in maildir file names, s,/,#, is not OK, although it
+  doesn't seem to fail for anyone yet.
+
+- Notmuchfs doesn't show up in 'df' output. Use the '-a' option to 'df' if you
+  must.

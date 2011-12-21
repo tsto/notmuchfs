@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Script to prompt the user for the tag string to use (e.g. '+tag1 -tag2'),
+# then apply it to the given message(s).
+#
+# Usage:
+#   Interactive:
+#     $ notmuch_tag
+#   Enter "?" to see a full tag list.
+#
+#   Pipe in Message-ID value(s), select tags interactively:
+#     $ echo id | notmuch_tag
+#
+#   All automatic:
+#     $ echo id | notmuch_tag +tag
+#
+# This file is part of notmuchfs.
+#
+# Notmuchfs is free software, released under the GNU General Public
+# License version 3 (or later).
+#
+# Copyright © 2012 Tim Stoakes
+################################################################################
+
+# Tag string, if any.
+TAGS=$1
+
+# Fetch the list of message IDs.
+while true; do
+  read -p "Message-ID: " ID
+  if [ -z "$ID"  ]; then
+    break
+  fi
+  IDS+=($ID)
+done
+
+if [ ${#IDS[*]} -eq 0 ]; then
+  echo "Message-ID required"
+  exit 1;
+fi
+
+ID_ORED=$(printf "id:%s or " "${IDS[@]}")
+ID_ORED=${ID_ORED:0:${#ID_ORED}-4}
+
+if [ -z "$TAGS" ]; then
+  # Display the current tags of the given messages, but only if no tags were
+  # specified on the command line (which probably means we are
+  # non-interactive).
+  echo
+  echo "Current tags:"
+  notmuch search-tags $ID_ORED
+  echo
+fi
+
+while [ -z "$TAGS" ]; do
+  # Prompt for tag string. Hack /dev/tty for mutt.
+  read -p "Tags: " -e TAGS < /dev/tty
+  if [ -z "$TAGS" ]; then
+    exit
+  fi
+
+  if [ "$TAGS" == "?" ]; then
+    echo
+    echo "All tags:"
+    notmuch search-tags
+    echo
+    TAGS=
+  fi
+done
+
+notmuch tag $TAGS $ID_ORED
+exit $?

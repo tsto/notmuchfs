@@ -1,0 +1,65 @@
+#----------------------------------------------------------------------------
+# A demonstration muttrc for use with notmuchfs.
+#
+# This file is part of notmuchfs
+#
+# Notmuchfs is free software, released under the GNU General Public
+# License version 3 (or later).
+#
+# Copyright © 2012 Tim Stoakes
+#----------------------------------------------------------------------------
+set mbox_type=Maildir
+# This is where notmuchfs is mounted. Trailing slash required.
+set folder=~/my_notmuchfs_mountpoint/
+
+# The directory inside the above folder to open by default.
+set spoolfile=+inbox/
+
+# Standard mutt, not notmuchfs specific.
+set postponed=~/.maildir/.queue/
+set record=~/.maildir/.sent/
+mailboxes + $record $postponed
+
+# Trim some fields from the folder viewer that don't make much sense. Tune to
+# taste.
+set folder_format="%2C %N %8s %d %f"
+
+# Display the X-Label header, so you can see the notmuch tags of a message.
+# Perhaps think about 'hdr_order' too.
+set weed=yes
+unignore X-Label
+
+# Header caching is a fine addition to any mutt.
+set header_cache=~/.mutt/hcache/
+# But body caching doesn't make so much sense with local mail.
+# The X-Label header changing dynamically also messes with this, so disable it.
+unset message_cachedir
+
+#----------------------------------------------------------------------------
+
+# A macro to reload the contents of the mailbox. Use this when the results of a
+# query have changed, and you want to see them.
+macro index "#" '<sync-mailbox><change-folder>^<enter>' "Reload mailbox"
+
+# List or alter notmuch tags of a message or set of tagged messages, by passing
+# through a script to the notmuch CLI.
+macro index,pager ",T" "<pipe-message>formail -d -xMessage-id: -s | tr -d \"<>\" | notmuch_tag<enter>" "Manage notmuch tags"
+
+# Shortcuts for managing specific tags.
+# e.g.:
+#macro index,pager ",ti"   "<pipe-message>formail -d -xMessage-id: -s | tr -d \"<>\" | notmuch_tag +interesting_tag<enter>" "Add 'interesting_tag' tag"
+#macro index,pager ",tI"   "<pipe-message>formail -d -xMessage-id: -s | tr -d \"<>\" | notmuch_tag -interesting_tag<enter>" "Remove 'interesting_tag' tag"
+
+
+# Creating a new notmuch search is as simple as creating a new directory inside
+# notmuchfs. This macro does just that.
+#
+# The default search stem to use. May be empty.
+set my_default_search="tag:interesting_tag"
+macro index "S" "<shell-escape>prompt_mkdir $folder$my_default_search <enter><change-folder>?" "Create a new notmuchfs query mailbox"
+
+# Colorise messages with particular flags.
+# e.g.:
+#color index    red      default        "~h '^X-Label: .*interesting_tag.*$'"
+
+#----------------------------------------------------------------------------

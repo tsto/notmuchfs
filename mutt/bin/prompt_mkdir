@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Prompt for a directory name, then mkdir it.
+#
+# This file is part of notmuchfs.
+#
+# Notmuchfs is free software, released under the GNU General Public
+# License version 3 (or later).
+#
+# Copyright © 2012 Tim Stoakes
+################################################################################
+
+read -e -p "Directory: " -i "$1" DIR
+if [ -z "$DIR" ]; then
+  exit 1
+fi
+
+mkdir "$DIR"
+exit $?

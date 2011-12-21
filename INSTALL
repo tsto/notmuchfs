@@ -1,0 +1,22 @@
+Build and install instructions for Notmuchfs.
+
+Compilation commands
+--------------------
+Simply:
+ $ make
+
+Platforms
+---------
+Any platform that supports FUSE and Notmuch should be supported, but only
+64-bit Arch-linux has been tested extensively.
+
+Dependencies
+------------
+
+  Notmuch
+  -------
+  Tested with 0.11
+
+  FUSE
+  ----
+  Required >= 2.6, tested with 2.8.7.
