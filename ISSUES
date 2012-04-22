@@ -56,3 +56,12 @@ Mis(sing)-features:
 
 - Notmuchfs doesn't show up in 'df' output. Use the '-a' option to 'df' if you
   must.
+
+
+
+Ideas:
+------
+
+- An IMAP or POP server could run on top of notmuchfs easily. What would make
+  this more useful?
+
