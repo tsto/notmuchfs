@@ -199,13 +199,25 @@ static void database_open (notmuch_context_t *p_ctx, bool need_write)
  PTHREAD_LOCK(&p_ctx->mutex);
  assert(p_ctx->db == NULL);
 
- while (p_ctx->db == NULL) {
-   p_ctx->db = notmuch_database_open(global_config.mail_dir,
-                                     need_write ?
-                                       NOTMUCH_DATABASE_MODE_READ_WRITE:
-                                       NOTMUCH_DATABASE_MODE_READ_ONLY);
-   if (p_ctx->db == NULL)
+ while (TRUE) {
+   notmuch_status_t status =
+     notmuch_database_open(global_config.mail_dir,
+                           need_write ?
+                             NOTMUCH_DATABASE_MODE_READ_WRITE:
+                             NOTMUCH_DATABASE_MODE_READ_ONLY,
+                           &p_ctx->db);
+
+   if (status == NOTMUCH_STATUS_SUCCESS) {
+     break;
+   }
+   else if (status == NOTMUCH_STATUS_XAPIAN_EXCEPTION) {
+     /* Try again. */
      sleep(1);
+   }
+   else {
+     fprintf(stderr, "ERROR: Database open error.\n");
+     exit(1);
+   }
  }
 
  if (notmuch_database_needs_upgrade(p_ctx->db)) {
@@ -227,6 +239,7 @@ static void database_close (notmuch_context_t *p_ctx)
  LOG_TRACE("notmuch database_close\n");
  assert(p_ctx->db != NULL);
  notmuch_database_close(p_ctx->db);
+ notmuch_database_destroy(p_ctx->db);
  p_ctx->db = NULL;
  PTHREAD_UNLOCK(&p_ctx->mutex);
 }
