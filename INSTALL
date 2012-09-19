@@ -15,7 +15,7 @@ Dependencies
 
   Notmuch
   -------
-  Tested with 0.13.
+  Tested with 0.13, 0.14.
 
   FUSE
   ----
