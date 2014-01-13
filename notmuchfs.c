@@ -2,7 +2,7 @@
 /*
  * notmuchfs - A virtual maildir file system for notmuch queries
  *
- * Copyright © 2012 Tim Stoakes
+ * Copyright © 2012-2014 Tim Stoakes
  *
  * This file is part of notmuchfs.
  *
@@ -490,7 +490,7 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
  }
 
  if (res == 0) {
-   fi->fh = (uint64_t)dir_fd;
+   fi->fh = (uint64_t)(uintptr_t)dir_fd;
  }
  else {
    free(dir_fd);
@@ -502,7 +502,7 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
 
 static int notmuchfs_releasedir (const char *path, struct fuse_file_info *fi)
 {
- opendir_t *dir_fd = (opendir_t *) fi->fh;
+ opendir_t *dir_fd = (opendir_t *)(uintptr_t)fi->fh;
  if (dir_fd != NULL) {
    if (dir_fd->type == OPENDIR_TYPE_NOTMUCH_QUERY) {
      if (dir_fd->p_messages != NULL)
@@ -599,7 +599,7 @@ static int notmuchfs_readdir (const char            *path,
 {
  int res = 0;
 
- opendir_t *dir_fd = (opendir_t *)fi->fh;
+ opendir_t *dir_fd = (opendir_t *)(uintptr_t)fi->fh;
 
  switch (dir_fd->type) {
    case OPENDIR_TYPE_NOTMUCH_QUERY:
@@ -839,7 +839,7 @@ static int notmuchfs_open (const char *path, struct fuse_file_info *fi)
    }
  }
 
- fi->fh = (uint64_t)p_open;
+ fi->fh = (uint64_t)(uintptr_t)p_open;
 
  return 0;
 }
@@ -848,7 +848,7 @@ static int notmuchfs_open (const char *path, struct fuse_file_info *fi)
 
 static int notmuchfs_release (const char *path, struct fuse_file_info *fi)
 {
- open_t *p_open = (open_t *)fi->fh;
+ open_t *p_open = (open_t *)(uintptr_t)fi->fh;
  assert(p_open != NULL);
 
  LOG_TRACE("close(%d)\n", p_open->fh);
@@ -856,7 +856,7 @@ static int notmuchfs_release (const char *path, struct fuse_file_info *fi)
  assert(res == 0);
 
  free(p_open);
- fi->fh = (uint64_t)NULL;
+ fi->fh = (uint64_t)(uintptr_t)NULL;
 
  return 0; /* Documentation says this is ignored. */
 }
@@ -871,7 +871,7 @@ static int notmuchfs_read (const char *path,
 {
  char   *buf        = buf_in;
  size_t  offset_adj = MAX_XLABEL_LENGTH;
- open_t *p_open     = (open_t *)fi->fh;
+ open_t *p_open     = (open_t *)(uintptr_t)fi->fh;
 
  assert(p_open != NULL);
 
