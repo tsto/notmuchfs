@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Prompt for a directory name, then mkdir it.
 #
@@ -7,7 +7,7 @@
 # Notmuchfs is free software, released under the GNU General Public
 # License version 3 (or later).
 #
-# Copyright © 2012 Tim Stoakes
+# Copyright © 2012-2014 Tim Stoakes
 ################################################################################
 
 read -e -p "Directory: " -i "$1" DIR
