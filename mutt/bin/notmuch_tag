@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Script to prompt the user for the tag string to use (e.g. '+tag1 -tag2'),
 # then apply it to the given message(s).
