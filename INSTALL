@@ -10,6 +10,11 @@ Platforms
 Any platform that supports FUSE and Notmuch should be supported, but only
 64-bit Arch-linux has been tested extensively.
 
+Arch Linux
+----------
+
+See 'notmuchfs-git' in AUR.
+
 Dependencies
 ------------
 
