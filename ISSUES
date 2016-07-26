@@ -4,12 +4,12 @@ notmuchfs - A virtual maildir file system for notmuch queries
 Notmuchfs is free software, released under the GNU General Public
 License version 3 (or later).
 
-Copyright © 2012 Tim Stoakes
+Copyright © 2012-2016 Tim Stoakes
 
 
 
-This is v0.1, so there are many unimplemented features and rough edges. Some of
-them are listed here.
+This is early version code, so there are many unimplemented features and rough
+edges. Some of them are listed here.
 
 
 Bugs:
@@ -64,4 +64,3 @@ Ideas:
 
 - An IMAP or POP server could run on top of notmuchfs easily. What would make
   this more useful?
-

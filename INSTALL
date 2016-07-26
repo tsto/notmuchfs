@@ -20,8 +20,8 @@ Dependencies
 
   Notmuch
   -------
-  Tested with 0.13, 0.14.
+  Required >= 0.20
 
   FUSE
   ----
-  Required >= 2.6, tested with 2.8.7, 2.9.1
+  Required >= 2.6, tested with 2.8.7, 2.9.1, 2.9.7

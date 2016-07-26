@@ -2,7 +2,7 @@
 /*
  * notmuchfs - A virtual maildir file system for notmuch queries
  *
- * Copyright © 2012-2014 Tim Stoakes
+ * Copyright © 2012-2016 Tim Stoakes
  *
  * This file is part of notmuchfs.
  *
@@ -66,7 +66,7 @@
 
 /*============================================================================*/
 
-#define NOTMUCHFS_VERSION "0.1"
+#define NOTMUCHFS_VERSION "0.2"
 
 /*============================================================================*/
 
@@ -465,8 +465,9 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
      dir_fd->next_offset = 1;
      dir_fd->p_query = notmuch_query_create(p_ctx->db, trans_name);
      if (dir_fd->p_query != NULL) {
-       dir_fd->p_messages = notmuch_query_search_messages(dir_fd->p_query);
-       if (dir_fd->p_messages == NULL) {
+       notmuch_status_t status =
+         notmuch_query_search_messages_st(dir_fd->p_query, &dir_fd->p_messages);
+       if (status != NOTMUCH_STATUS_SUCCESS) {
          notmuch_query_destroy(dir_fd->p_query);
          dir_fd->p_query = NULL;
          database_close(p_ctx);
