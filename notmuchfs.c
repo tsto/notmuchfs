@@ -58,6 +58,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/param.h>
+#include <string.h>
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
@@ -160,6 +161,9 @@ typedef struct
 
  /** The notmuch database handle. May be NULL if the database is not opened. */
  notmuch_database_t *db;
+
+ /** Newline-delimited string list of tags to exclude from results. */
+ char               *excluded_tags;
 } notmuch_context_t;
 
 /*============================================================================*/
@@ -248,6 +252,9 @@ static void database_close (notmuch_context_t *p_ctx)
 
 /* FUSE operations. */
 
+/** The maximum length of the tag exclusion string. Arbitrarily chosen. */
+#define EXCLUDED_TAGS_MAX_LENGTH 128
+
 static void *notmuchfs_init (struct fuse_conn_info *conn)
 {
  int res = chdir(global_config.backing_dir);
@@ -262,6 +269,21 @@ static void *notmuchfs_init (struct fuse_conn_info *conn)
    return NULL;
  }
 
+ /* Fetch the list of excluded tags from notmuch config.
+  * If only there was an API for this...
+  */
+ p_ctx->excluded_tags = malloc(EXCLUDED_TAGS_MAX_LENGTH);
+ p_ctx->excluded_tags[0] = '\0';
+ FILE *fp = popen("notmuch config get search.exclude_tags", "r");
+ if (fp != NULL) {
+   size_t bytes_read = fread(p_ctx->excluded_tags, 1, EXCLUDED_TAGS_MAX_LENGTH,
+                             fp);
+   if (bytes_read > 0) {
+     p_ctx->excluded_tags[bytes_read - 1] = '\0';
+   }
+   (void)pclose(fp);
+ }
+
  return p_ctx;
 }
 
@@ -271,6 +293,7 @@ static void notmuchfs_destroy (void *p_ctx_in)
 {
  notmuch_context_t *p_ctx = (notmuch_context_t *)p_ctx_in;
 
+ free(p_ctx->excluded_tags);
  int res = pthread_mutex_destroy(&p_ctx->mutex);
  /* Any failure here is a problem that we caused. */
  assert(res == 0);
@@ -465,6 +488,15 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
      dir_fd->next_offset = 1;
      dir_fd->p_query = notmuch_query_create(p_ctx->db, trans_name);
      if (dir_fd->p_query != NULL) {
+       /* Exclude messages that match the 'excluded' tags. */
+       char *exclude_tag = strtok(p_ctx->excluded_tags, "\n");
+       while (exclude_tag != NULL) {
+         notmuch_query_add_tag_exclude(dir_fd->p_query, exclude_tag);
+         exclude_tag = strtok(NULL, "\n");
+       }
+       notmuch_query_set_omit_excluded(dir_fd->p_query, NOTMUCH_EXCLUDE_ALL);
+
+       /* Run the query. */
        notmuch_status_t status =
          notmuch_query_search_messages_st(dir_fd->p_query, &dir_fd->p_messages);
        if (status != NOTMUCH_STATUS_SUCCESS) {
