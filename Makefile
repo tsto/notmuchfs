@@ -19,7 +19,8 @@
 #
 # Authors: Tim Stoakes <tim@stoakes.net>
 
-CFLAGS = -g -O2 -std=c99 -Wall -Werror -D_FILE_OFFSET_BITS=64
+CFLAGS = -g -O2 -std=c99 -D_FILE_OFFSET_BITS=64 \
+	 -Wall -Werror -Wno-error=pointer-to-int-cast -Wno-error=int-to-pointer-cast
 
 OBJS = notmuchfs.o
 
