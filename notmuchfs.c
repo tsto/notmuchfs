@@ -89,6 +89,13 @@ struct notmuchfs_config {
    */
   char *mail_dir;
 
+
+  /**
+   * Tag to apply when a mail is deleted instead of unlinking the
+   * underlying maildir file.
+   */
+  char *delete_tag;
+
   /**
    * Mutt is not compliant with the maildir spec, see:
    * - http://dev.mutt.org/trac/ticket/2476
@@ -1154,28 +1161,49 @@ static int notmuchfs_unlink (const char* path)
    trans_name[PATH_MAX - 1] = '\0';
    string_replace(trans_name, '#', '/');
 
-#if 0
-   /* Delete the message from the notmuch database too. Is this the right
-    * thing to do?
-    */
+   path = trans_name;
+ }
+
+ if (global_config.delete_tag != NULL) {
    struct fuse_context *p_fuse_ctx = fuse_get_context();
    notmuch_context_t    *p_ctx     =
      (notmuch_context_t *)p_fuse_ctx->private_data;
 
    database_open(p_ctx, TRUE);
 
-   LOG_TRACE("notmuch_database_remove_message(%s)\n", trans_name);
-   notmuch_database_remove_message(p_ctx->db, trans_name);
+   LOG_TRACE("notmuch_database_find_message_by_filename(%s)\n", path);
+   notmuch_message_t *message;
+   notmuch_status_t status =
+     notmuch_database_find_message_by_filename(p_ctx->db, path, &message);
+   switch (status) {
+     case NOTMUCH_STATUS_SUCCESS:
+       break;
+     case NOTMUCH_STATUS_OUT_OF_MEMORY:
+       database_close(p_ctx);
+       return -ENOMEM;
+     default:
+       database_close(p_ctx);
+       return -EIO;
+   }
+
+   LOG_TRACE("notmuch_message_add_tag(%s, %s)\n", path,
+             global_config.delete_tag);
+   if (notmuch_message_add_tag(message, global_config.delete_tag) !=
+       NOTMUCH_STATUS_SUCCESS) {
+     /* Ignore all errors, there's nothing we can do about them anyway. This
+      * will mean a deleted message is 'resurrected', which the user can
+      * clearly see and retry.
+      */
+   }
 
    database_close(p_ctx);
-#endif
-
-   path = trans_name;
+ }
+ else {
+   LOG_TRACE("unlink(%s)\n", path);
+   if (unlink(path) != 0)
+     return -errno;
  }
 
- LOG_TRACE("unlink(%s)\n", path);
- if (unlink(path) != 0)
-   return -errno;
  return 0;
 }
 
@@ -1242,6 +1270,7 @@ enum {
 static struct fuse_opt notmuchfs_opts[] = {
   NOTMUCHFS_OPT("backing_dir=%s",               backing_dir, 0),
   NOTMUCHFS_OPT("mail_dir=%s",                  mail_dir, 0),
+  NOTMUCHFS_OPT("delete_tag=%s",                delete_tag, 0),
   NOTMUCHFS_OPT("mutt_2476_workaround",         mutt_2476_workaround_allowed, 1),
   NOTMUCHFS_OPT("nomutt_2476_workaround",       mutt_2476_workaround_allowed, 0),
   NOTMUCHFS_OPT("--mutt_2476_workaround=true",  mutt_2476_workaround_allowed, 1),
@@ -1266,6 +1295,7 @@ static void print_notmuchfs_usage (char *arg0) {
           "Notmuchfs options:\n"
           "    -o backing_dir=PATH  Path to backing directory (required)\n"
           "    -o mail_dir=PATH     Path to parent directory of notmuch database (required)\n"
+          "    -o delete_tag=TAG    Tag to apply when a mail is deleted\n"
           "    -o mutt_2476_workaround\n"
           "    -o nomutt_2476_workaround (default)\n"
           , arg0);
