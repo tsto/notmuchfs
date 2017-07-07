@@ -1139,12 +1139,14 @@ static int notmuchfs_rename (const char* from, const char* to)
 
 static int notmuchfs_unlink (const char* path)
 {
+ /* Ignore the initial '/' */
  assert(path[0] == '/');
+ path++;
 
- char *last_pslash = strrchr(path + 1, '#');
+ char *last_pslash = strrchr(path, '#');
 
  if (last_pslash != NULL) {
-   char *last_slash = strrchr(path + 1, '/');
+   char *last_slash = strrchr(path, '/');
    char  trans_name[PATH_MAX];
 
    strncpy(trans_name, last_slash + 1, PATH_MAX - 1);
@@ -1173,8 +1175,8 @@ static int notmuchfs_unlink (const char* path)
    return 0;
  }
  else {
-   LOG_TRACE("unlink(%s)\n", path + 1);
-   if (unlink(path + 1) != 0)
+   LOG_TRACE("unlink(%s)\n", path);
+   if (unlink(path) != 0)
      return -errno;
    return 0;
  }
