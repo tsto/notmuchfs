@@ -91,8 +91,8 @@ struct notmuchfs_config {
 
 
   /**
-   * Tag to apply when a mail is deleted instead of the unlinking the
-   * underlying maildir file.
+   * Tag to apply when a mail is deleted instead of unlinking the underlying
+   * maildir file.
    */
   char *delete_tag;
 
@@ -1164,22 +1164,6 @@ static int notmuchfs_unlink (const char* path)
    path = trans_name;
  }
 
-#if 0
- /* Delete the message from the notmuch database too. Is this the right
-  * thing to do?
-  */
- struct fuse_context *p_fuse_ctx = fuse_get_context();
- notmuch_context_t    *p_ctx     =
-   (notmuch_context_t *)p_fuse_ctx->private_data;
-
- database_open(p_ctx, TRUE);
-
- LOG_TRACE("notmuch_database_remove_message(%s)\n", path);
- notmuch_database_remove_message(p_ctx->db, path);
-
- database_close(p_ctx);
-#endif
-
  if (global_config.delete_tag) {
    struct fuse_context *p_fuse_ctx = fuse_get_context();
    notmuch_context_t    *p_ctx     =
@@ -1192,12 +1176,14 @@ static int notmuchfs_unlink (const char* path)
    notmuch_status_t status =
      notmuch_database_find_message_by_filename(p_ctx->db, path, &message);
    switch (status) {
-   case NOTMUCH_STATUS_SUCCESS:
-     break;
-   case NOTMUCH_STATUS_OUT_OF_MEMORY:
-     return -ENOMEM;
-   default:
-     return -EIO;
+     case NOTMUCH_STATUS_SUCCESS:
+       break;
+     case NOTMUCH_STATUS_OUT_OF_MEMORY:
+       database_close(p_ctx);
+       return -ENOMEM;
+     default:
+       database_close(p_ctx);
+       return -EIO;
    }
 
    LOG_TRACE("notmuch_message_add_tag(%s, %s)\n", path,
