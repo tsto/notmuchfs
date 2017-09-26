@@ -498,7 +498,7 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
 
        /* Run the query. */
        notmuch_status_t status =
-         notmuch_query_search_messages_st(dir_fd->p_query, &dir_fd->p_messages);
+         notmuch_query_search_messages(dir_fd->p_query, &dir_fd->p_messages);
        if (status != NOTMUCH_STATUS_SUCCESS) {
          notmuch_query_destroy(dir_fd->p_query);
          dir_fd->p_query = NULL;
