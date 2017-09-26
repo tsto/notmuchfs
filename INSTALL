@@ -20,7 +20,7 @@ Dependencies
 
   Notmuch
   -------
-  Required >= 0.20
+  Required >= 0.25
 
   FUSE
   ----
