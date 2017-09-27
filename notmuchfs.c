@@ -2,7 +2,7 @@
 /*
  * notmuchfs - A virtual maildir file system for notmuch queries
  *
- * Copyright © 2012-2016 Tim Stoakes
+ * Copyright © 2012-2017 Tim Stoakes
  *
  * This file is part of notmuchfs.
  *
@@ -264,6 +264,8 @@ static void database_close (notmuch_context_t *p_ctx)
 
 static void *notmuchfs_init (struct fuse_conn_info *conn)
 {
+ (void)conn;
+
  int res = chdir(global_config.backing_dir);
  if (res == -1)
    return NULL;
@@ -542,6 +544,8 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
 
 static int notmuchfs_releasedir (const char *path, struct fuse_file_info *fi)
 {
+ (void)path;
+
  opendir_t *dir_fd = (opendir_t *)(uintptr_t)fi->fh;
  if (dir_fd != NULL) {
    if (dir_fd->type == OPENDIR_TYPE_NOTMUCH_QUERY) {
@@ -637,6 +641,7 @@ static int notmuchfs_readdir (const char            *path,
                               off_t                  offset_in,
                               struct fuse_file_info *fi)
 {
+ (void)path;
  int res = 0;
 
  opendir_t *dir_fd = (opendir_t *)(uintptr_t)fi->fh;
@@ -888,6 +893,7 @@ static int notmuchfs_open (const char *path, struct fuse_file_info *fi)
 
 static int notmuchfs_release (const char *path, struct fuse_file_info *fi)
 {
+ (void)path;
  open_t *p_open = (open_t *)(uintptr_t)fi->fh;
  assert(p_open != NULL);
 
@@ -909,6 +915,7 @@ static int notmuchfs_read (const char *path,
                            off_t       offset,
                            struct      fuse_file_info *fi)
 {
+ (void)path;
  char   *buf        = buf_in;
  size_t  offset_adj = MAX_XLABEL_LENGTH;
  open_t *p_open     = (open_t *)(uintptr_t)fi->fh;
@@ -1307,6 +1314,8 @@ static int notmuchfs_opt_proc (void             *data,
                                int               key,
                                struct fuse_args *outargs)
 {
+ (void)data;
+ (void)arg;
  switch (key) {
    case KEY_HELP:
      print_notmuchfs_usage(outargs->argv[0]);

@@ -19,7 +19,7 @@
 #
 # Authors: Tim Stoakes <tim@stoakes.net>
 
-CFLAGS = -g -O2 -std=c99 -Wall -Werror -D_FILE_OFFSET_BITS=64
+CFLAGS = -g -O2 -std=c99 -Wall -Wextra -Werror -D_FILE_OFFSET_BITS=64
 
 OBJS = notmuchfs.o
 
