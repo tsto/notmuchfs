@@ -67,7 +67,7 @@
 
 /*============================================================================*/
 
-#define NOTMUCHFS_VERSION "0.3"
+#define NOTMUCHFS_VERSION "0.4"
 
 /*============================================================================*/
 
@@ -1085,7 +1085,7 @@ static int notmuchfs_rename (const char* from, const char* to)
     */
    if (strncmp(trans_name_from, trans_name_to, PATH_MAX) != 0) {
      LOG_TRACE("notmuch_database_add_message(%s)\n", trans_name_to);
-     if (notmuch_database_add_message(p_ctx->db, trans_name_to, NULL) !=
+     if (notmuch_database_index_file(p_ctx->db, trans_name_to, NULL, NULL) !=
          NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID) {
        LOG_TRACE("WARNING: Did not find message in database: %s\n",
                  trans_name_to);
