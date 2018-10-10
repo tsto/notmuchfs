@@ -923,7 +923,7 @@ static int notmuchfs_read (const char *path,
  assert(p_open != NULL);
 
  if (offset < MAX_XLABEL_LENGTH) {
-   size_t bytes_to_copy = MIN(MAX_XLABEL_LENGTH - offset, size);
+   size_t bytes_to_copy = MIN((size_t)(MAX_XLABEL_LENGTH - offset), size);
    memcpy(buf, p_open->x_label + offset, bytes_to_copy);
    buf += bytes_to_copy;
    offset_adj = offset + bytes_to_copy;
