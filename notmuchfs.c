@@ -328,7 +328,7 @@ static int notmuchfs_getattr (const char *path, struct stat *stbuf)
    return res;
  }
 
- char *last_slash  = strrchr(path + 1, '/');
+ const char *last_slash  = strrchr(path + 1, '/');
  if (last_slash == NULL) {
    /* Querying '/<query>', pass to backing store. */
    LOG_TRACE("getattr stat1: %s\n", path + 1);
@@ -348,7 +348,7 @@ static int notmuchfs_getattr (const char *path, struct stat *stbuf)
  }
  else {
    /* '/<query>/cur/translated#msg#name' */
-   char *first_slash = strchr(path + 1, '/');
+   const char *first_slash = strchr(path + 1, '/');
    bool  mutt_2476_workaround = FALSE;
 
    if (global_config.mutt_2476_workaround_allowed) {
@@ -449,7 +449,7 @@ static int notmuchfs_opendir (const char* path, struct fuse_file_info* fi)
    dir_fd->fd = opendir(trans_name);
  }
  else {
-   char *last_slash = strrchr(path + 1, '/');
+   const char *last_slash = strrchr(path + 1, '/');
    if (last_slash == NULL) {
      /* Listing '/<query>', so return the 3 maildir dirs. */
      LOG_TRACE("opendir fake maildir: %s\n", path);
@@ -803,7 +803,7 @@ static int notmuchfs_open (const char *path, struct fuse_file_info *fi)
  open_t *p_open = malloc(sizeof(open_t));
  memset(p_open, 0, sizeof(open_t));
 
- char *last_slash = strrchr(path + 1, '/');
+ const char *last_slash = strrchr(path + 1, '/');
  if (last_slash == NULL) {
    p_open->fh = open(path + 1, O_RDONLY);
    if (p_open->fh == -1) {
@@ -976,12 +976,12 @@ static int notmuchfs_rename (const char* from, const char* to)
  assert(from[0] == '/');
  assert(to[0] == '/');
 
- char    *last_pslash_from     = strrchr(from + 1, '#');
- char    *last_pslash_to       = strrchr(to + 1, '#');
- char    *last_slash_from      = strrchr(from + 1, '/');
- char    *last_slash_to        = strrchr(to + 1, '/');
+ const char *last_pslash_from     = strrchr(from + 1, '#');
+ const char *last_pslash_to       = strrchr(to + 1, '#');
+ const char *last_slash_from      = strrchr(from + 1, '/');
+ const char *last_slash_to        = strrchr(to + 1, '/');
  /* Values are 0 (no workaround), 1 or 2 (see below). */
- unsigned mutt_2476_workaround = 0;
+ unsigned    mutt_2476_workaround = 0;
 
  if (last_pslash_from == NULL && last_pslash_to == NULL) {
    /* Renaming from a non-maildir name to another non-maildir name - just pass
@@ -1162,10 +1162,10 @@ static int notmuchfs_unlink (const char* path)
  assert(path[0] == '/');
  path++;
 
- char *last_pslash = strrchr(path, '#');
+ const char *last_pslash = strrchr(path, '#');
 
  if (last_pslash != NULL) {
-   char *last_slash = strrchr(path, '/');
+   const char *last_slash = strrchr(path, '/');
 
    strncpy(trans_name, last_slash + 1, PATH_MAX - 1);
    trans_name[PATH_MAX - 1] = '\0';
