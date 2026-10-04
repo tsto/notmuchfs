@@ -24,4 +24,4 @@ Dependencies
 
   FUSE
   ----
-  Required >= 2.6, tested with 2.8.7, 2.9.1, 2.9.7, 2.9.9
+  Required >= 3.0, tested with 3.14.1, 3.18.1, 3.18.2, 3.18.3

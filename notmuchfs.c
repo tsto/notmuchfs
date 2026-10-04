@@ -60,14 +60,14 @@
 #include <sys/param.h>
 #include <string.h>
 
-#define FUSE_USE_VERSION 26
+#define FUSE_USE_VERSION 30
 #include <fuse.h>
 
 #include "notmuch.h"
 
 /*============================================================================*/
 
-#define NOTMUCHFS_VERSION "0.5"
+#define NOTMUCHFS_VERSION "0.6"
 
 /*============================================================================*/
 
@@ -270,9 +270,10 @@ static void database_close (notmuch_context_t *p_ctx)
 /** The maximum length of the tag exclusion string. Arbitrarily chosen. */
 #define EXCLUDED_TAGS_MAX_LENGTH 128
 
-static void *notmuchfs_init (struct fuse_conn_info *conn)
+static void *notmuchfs_init (struct fuse_conn_info *conn, struct fuse_config *cfg)
 {
  UNUSED(conn);
+ UNUSED(cfg);
 
  int res = chdir(global_config.backing_dir);
  if (res == -1)
@@ -320,8 +321,9 @@ static void notmuchfs_destroy (void *p_ctx_in)
 
 /*============================================================================*/
 
-static int notmuchfs_getattr (const char *path, struct stat *stbuf)
+static int notmuchfs_getattr (const char *path, struct stat *stbuf, struct fuse_file_info *fi)
 {
+ UNUSED(fi);
  int res = 0;
 
  memset(stbuf, 0, sizeof(struct stat));
@@ -616,7 +618,7 @@ static int fill_dir_with_message (opendir_t         *dir_fd,
      stbuf.st_size += MAX_XLABEL_LENGTH;
      LOG_TRACE("readdir filling dir %s at %ld\n",
                trans_name, dir_fd->next_offset);
-     if (filler(buf, trans_name, &stbuf, dir_fd->next_offset++) != 0) {
+     if (filler(buf, trans_name, &stbuf, dir_fd->next_offset++, 0) != 0) {
        LOG_TRACE("readdir filler full \"%s\".\n", trans_name);
        dir_fd->next_offset--;
        res = INT_MAX;
@@ -647,9 +649,11 @@ static int notmuchfs_readdir (const char            *path,
                               void                  *buf,
                               fuse_fill_dir_t        filler,
                               off_t                  offset_in,
-                              struct fuse_file_info *fi)
+                              struct fuse_file_info *fi,
+                              enum fuse_readdir_flags flags)
 {
  UNUSED(path);
+ UNUSED(flags);
  int res = 0;
 
  opendir_t *dir_fd = (opendir_t *)(uintptr_t)fi->fh;
@@ -658,8 +662,8 @@ static int notmuchfs_readdir (const char            *path,
    case OPENDIR_TYPE_NOTMUCH_QUERY:
      {
       if (offset_in == 0) {
-        filler(buf, ".", NULL, dir_fd->next_offset++);
-        filler(buf, "..", NULL, dir_fd->next_offset++);
+        filler(buf, ".", NULL, dir_fd->next_offset++, 0);
+        filler(buf, "..", NULL, dir_fd->next_offset++, 0);
       }
       else if (offset_in + 1 != dir_fd->next_offset) {
         fprintf(stderr, "ERROR: discontiguous dir offsets %ld %ld.\n",
@@ -696,7 +700,7 @@ static int notmuchfs_readdir (const char            *path,
         st.st_ino = de->d_ino;
         st.st_mode = de->d_type << 12;
 
-        if (filler(buf, de->d_name, &st, telldir(dir_fd->fd)) != 0) {
+        if (filler(buf, de->d_name, &st, telldir(dir_fd->fd), 0) != 0) {
           res = 0;
           break;
         }
@@ -706,18 +710,18 @@ static int notmuchfs_readdir (const char            *path,
 
    case OPENDIR_TYPE_EMPTY_DIR:
      {
-      filler(buf, ".", NULL, 0);
-      filler(buf, "..", NULL, 0);
+      filler(buf, ".", NULL, 0, 0);
+      filler(buf, "..", NULL, 0, 0);
       break;
      }
 
    case OPENDIR_TYPE_MAIL_DIR:
      {
-      filler(buf, ".", NULL, 0);
-      filler(buf, "..", NULL, 0);
-      filler(buf, "cur", NULL, 0);
-      filler(buf, "new", NULL, 0);
-      filler(buf, "tmp", NULL, 0);
+      filler(buf, ".", NULL, 0, 0);
+      filler(buf, "..", NULL, 0, 0);
+      filler(buf, "cur", NULL, 0, 0);
+      filler(buf, "new", NULL, 0, 0);
+      filler(buf, "tmp", NULL, 0, 0);
       break;
      }
  }
@@ -976,8 +980,10 @@ static int notmuchfs_rmdir (const char* path)
 
 /*============================================================================*/
 
-static int notmuchfs_rename (const char* from, const char* to)
+static int notmuchfs_rename (const char* from, const char* to, unsigned int flags)
 {
+ UNUSED(flags);
+
  assert(from[0] == '/');
  assert(to[0] == '/');
 
@@ -985,6 +991,7 @@ static int notmuchfs_rename (const char* from, const char* to)
  const char *last_pslash_to       = strrchr(to + 1, '#');
  const char *last_slash_from      = strrchr(from + 1, '/');
  const char *last_slash_to        = strrchr(to + 1, '/');
+
  /* Values are 0 (no workaround), 1 or 2 (see below). */
  unsigned    mutt_2476_workaround = 0;
 
@@ -1299,13 +1306,7 @@ static struct fuse_opt notmuchfs_opts[] = {
 };
 
 static void print_notmuchfs_usage (char *arg0) {
-  fprintf(stderr,
-          "Usage: %s mountpoint -o backing_dir=PATH -o mail_dir=PATH [options]\n"
-          "\n"
-          "General options:\n"
-          "    -o opt,[opt...]  mount options\n"
-          "    -h   --help      print help\n"
-          "    -V   --version   print version\n"
+  printf(
           "\n"
           "Notmuchfs options:\n"
           "    -o backing_dir=PATH  Path to backing directory (required)\n"
@@ -1313,6 +1314,8 @@ static void print_notmuchfs_usage (char *arg0) {
           "    -o delete_tag=TAG    Tag to apply when a mail is deleted\n"
           "    -o mutt_2476_workaround\n"
           "    -o nomutt_2476_workaround (default)\n"
+          "\n"
+          "Example: %s -o backing_dir=PATH -o mail_dir=PATH <mountpoint>\n"
           , arg0);
 }
 
@@ -1326,13 +1329,13 @@ static int notmuchfs_opt_proc (void             *data,
  UNUSED(arg);
  switch (key) {
    case KEY_HELP:
-     print_notmuchfs_usage(outargs->argv[0]);
-     fuse_opt_add_arg(outargs, "-ho");
+     fuse_opt_add_arg(outargs, "--help");
      fuse_main(outargs->argc, outargs->argv, &notmuchfs_oper, NULL);
+     print_notmuchfs_usage(outargs->argv[0]);
      exit(1);
 
    case KEY_VERSION:
-     fprintf(stderr, "Notmuchfs version %s\n", NOTMUCHFS_VERSION);
+     printf("Notmuchfs version %s\n", NOTMUCHFS_VERSION);
      fuse_opt_add_arg(outargs, "--version");
      fuse_main(outargs->argc, outargs->argv, &notmuchfs_oper, NULL);
      exit(0);

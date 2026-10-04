@@ -140,7 +140,7 @@ at ~/my_notmuchfs_mountpoint/. E.g. with mutt, use:
 To unmount:
 
 ~~~ sh
-$ fusermount -u ~/my_notmuchfs_mountpoint
+$ fusermount3 -u ~/my_notmuchfs_mountpoint
 ~~~
 
 

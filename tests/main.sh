@@ -17,7 +17,7 @@ set -x
 trap "cleanup" SIGINT SIGTERM EXIT
 
 function cleanup {
-  fusermount -u "$TEST_ROOT/mount"
+  fusermount3 -u "$TEST_ROOT/mount"
   rm -Rf "$TEST_ROOT"
 }
 
